@@ -87,3 +87,5 @@ grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
         details = "failed to connect to all addresses"
         debug_error_string = "{"created":"@1657514369.130117392","description":"Failed to pick subchannel","file":"src/core/ext/filters/client_channel/client_channel.cc","file_line":3128,"referenced_errors":[{"created":"@1657514369.130116240","description":"failed to connect to all addresses","file":"src/core/lib/transport/error_utils.cc","file_line":163,"grpc_status":14}]}"
 ```
+
+5. Kudu also responds with an HTTP 502 response "This page isn't working right now"
