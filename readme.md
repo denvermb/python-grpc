@@ -1,10 +1,3 @@
-Add a README
-overview of the project
-how to clone and install
-how it works
-how to test it
-Repro steps on what's not working w/ logs if possible
-
 # gRPC Python App
 
 ### Steps to run the application
