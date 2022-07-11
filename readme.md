@@ -41,7 +41,7 @@ Now that it's tested locally, you can deploy the application to App Service.  Cr
 Once it's deployed, you can replace the listening port in the local client application with the azurewebsites.net url to test the deployed grpc server. This is found on line 26 of `greeter_client.py`.
 
 ### Issues/Logs
-1. Once deployed, the azurewebsites url shows an HTTP 415 error "This page isn't working right now"
+1. Once deployed, the azurewebsites url shows an HTTP 503 error "Failed to load"
 2. However, the log stream application logs show the following errors:
 
 ```
