@@ -97,6 +97,20 @@ Run the following command to deploy your grpc app to App Service.
 #### 10. Test the application
 Once deployed, replace the listening port in the local client application with the azurewebsites.net url of your app to test the deployed grpc server. This is found on line 31 of `greeter_client.py`.
 
+The application should return the following:
+
+```Console
+created channel
+created stub
+response returned
+Greeter client received: Hello, you!
+```
+
+Accessing the application via web browser should print the following message:
+```Console
+Greeter Server, serving with Http/1.1
+```
+
 ### Common Issues/Bugs
 1. Forgetting to set or incorrectly setting any of the above application settings will result in a malfunctioning app
 2. Remember to always start your grpc server before your flask server. In `app.py` running `app.run()` before `grpc_server = serve()` will prevent the grpc server from ever starting.
