@@ -30,9 +30,11 @@ Once the application is running, you can start the client application. Run the c
 
 The client app will open a console app and respond with the text:
 
-```bash
+```Console
+created channel
+created stub
+response returned
 Greeter client received: Hello, you!
-Greeter client received: Hello again, you!
 ```
 
 ##### Deploying to App Service
@@ -95,7 +97,13 @@ Run the following command to deploy your grpc app to App Service.
 `az webapp up --name <app-name>`
 
 #### 10. Test the application
-Once deployed, replace the listening port in the local client application with the azurewebsites.net url of your app to test the deployed grpc server. This is found on line 31 of `greeter_client.py`.
+Once deployed, replace the listening port in the local client application with the azurewebsites.net url of your app to test the deployed grpc server. This is found on line 34 of `greeter_client.py`.
+
+Also, don't forget to change your `insecure channel` to a `secure channel` on line 34 of `greeter_client.py`. Replace the current line with: 
+
+```Python
+with grpc.secure_channel('[APP_NAME].azurewebsites.net', creds) as channel:
+```
 
 The application should return the following:
 
@@ -114,3 +122,5 @@ Greeter Server, serving with Http/1.1
 ### Common Issues/Bugs
 1. Forgetting to set or incorrectly setting any of the above application settings will result in a malfunctioning app
 2. Remember to always start your grpc server before your flask server. In `app.py` running `app.run()` before `grpc_server = serve()` will prevent the grpc server from ever starting.
+3. Forgetting to change the channel type of your grpc channel to a `secure channel` and updating the URL to your App Service URL
+4. Including your grpc port number with your App Service URL in your channel connection
