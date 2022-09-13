@@ -14,30 +14,40 @@
 """The Python implementation of the GRPC helloworld.Greeter server."""
 
 from concurrent import futures
-import logging
+# import logging
 
+# must enable SCM_DO_BUILD_DURING_DEPLOYMENT=true
 import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 
+from flask import Flask
+# import time
+
+app = Flask(__name__)
+
+@app.route('/')
+def func():
+    return "Greeter Server, serving with Http/1.1"
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     def SayHello(self, request, context):
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
-    def SayHelloAgain(self, request, context):
-        return helloworld_pb2.HelloReply(message='Hello again, %s!' % request.name)
-
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-    server.add_insecure_port('[::]:8585')
+    app.logger.error("adding insecure port 8282")
+    p = server.add_insecure_port('0.0.0.0:8282')
+    app.logger.error("opened up on port ")
+    app.logger.error(p)
     server.start()
-    server.wait_for_termination()
-
+    return server
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    serve()
+    app.logger.error("hello! starting up")
+    grpc_server = serve()
+    app.logger.error("serving grpc!")
+    app.run(host="0.0.0.0", port=8000)

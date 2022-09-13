@@ -1,4 +1,4 @@
-# gRPC Python App
+# gRPC Python App on App Service
 
 ### Steps to run the application
 #### 1. Clone the application and open the `python-grpc` directory in VS Code
@@ -23,10 +23,10 @@ pip3 install -r requirements.txt
 ```
 
 #### 3. Run the app locally
-To run this app locally, run `python3 greeter_server.py`. The gRPC service will start listening on port `8585`.The server app is now ready to receive requests from the client.
+To run this app locally, run `python app.py`. The gRPC service will start listening on port `8282`.The server app is now ready to receive requests from the client.
 
 ##### Start the client application
-Once the application is running, you can start the client application. Run the client application with `python3 greeter_client.py`. 
+Once the application is running, you can start the client application. Run the client application with `python greeter_client.py`. 
 
 The client app will open a console app and respond with the text:
 
@@ -36,56 +36,67 @@ Greeter client received: Hello again, you!
 ```
 
 ##### Deploying to App Service
-Now that it's tested locally, you can deploy the application to App Service.  Create a web app using the following directions in this [How-To](https://github.com/Azure/app-service-linux-docs/blob/master/HowTo/gRPC/use_gRPC_with_dotnet.md#deploy-to-app-service) to enable gRPC calls.
+After testing locally, you can deploy the application to App Service.  Create a linux web app and follow the **Deployment Steps** below to enable gRPC calls on your application.
 
-Once it's deployed, you can replace the listening port in the local client application with the azurewebsites.net url to test the deployed grpc server. This is found on line 26 of `greeter_client.py`.
+### Deployment Steps
 
-### Issues/Logs
-1. Once deployed, the azurewebsites url shows an HTTP 503 error "Failed to load"
-2. However, the log stream application logs show the following errors:
+#### 1. Enable HTTP version
+The first setting you'll need to configure is the HTTP version
+1. Navigate to **Configuration** under **Settings** in the left pane of your web app
+2. Click on the **General Settings** tab and scroll down to **Platform settings**
+3. Go to the **HTTP version** drop-down and select **2.0**
+4. Click **save**
 
-```
-{"timestamp":"2022-07-11T04:56:51.032546763Z","level":"ERROR","machineName":"lw0sdlwk00016T","containerName":"python-grpc_0_7788ab5f","message":" Output is compressed. Extracting it...\n","id":"0d5f27d2-2470-4e9b-8161-eccdc9f3b161","instance":"761a092c6cbeec305dbcc6c6e744b006c4d173d9d935c8e17cb6b4c751c4957e"}
-```
+This will restart your application and configure the front end to allow clients to make HTTP/2 calls.
 
-```
-{"timestamp":"2022-07-11T04:56:51.039991952Z","level":"ERROR","machineName":"lw0sdlwk00016T","containerName":"python-grpc_0_7788ab5f","message":" Extracting '/home/site/wwwroot/output.tar.gz' to directory '/tmp/8da62f988ae7a83'...\n","id":"6aacd216-7e72-44d1-99cd-6b92922d1f28","instance":"761a092c6cbeec305dbcc6c6e744b006c4d173d9d935c8e17cb6b4c751c4957e"}
-```
+#### 2. Enable HTTP 2.0 Proxy
+Next, you'll need to configure the HTTP 2.0 Proxy:
+1. Under the same **Platform settings** section, find the **HTTP 2.0 Proxy** setting and switch it to **On**.
+2. Click **save**
 
-```
-{"timestamp":"2022-07-11T04:56:53.969282020Z","level":"ERROR","machineName":"lw0sdlwk00016T","containerName":"python-grpc_0_7788ab5f","message":" App path is set to '/tmp/8da62f988ae7a83'\n","id":"6355c6a3-5d35-450d-82c9-50f3aef5765e","instance":"761a092c6cbeec305dbcc6c6e744b006c4d173d9d935c8e17cb6b4c751c4957e"}
-```
+Once turned on, this setting will configure your site to be forwarded HTTP/2 requests.
 
-3. Platform logs show container exposed at 8585, although the container never properly starts
+#### 3. Add HTTP20_ONLY_PORT application setting
+Earlier, we configured the application to listen to a specific HTTP/2 only port.  Here we'll add an app setting HTTP20_ONLY_PORT and put the value as the port number we used earlier.
+1. Navigate to the **Configuration** under **Settings** on the left pane of your web app.  
+2. Under **Application Settings**, click on **New application setting**
+3. Add the following app setting to your application
+	1. **Name =** HTTP20_ONLY_PORT 
+	2. **Value =** 8282
 
-```
-{{"timestamp":"2022-07-11T04:54:16.321Z","level":"INFO","containerName":"python-grpc_0_58311c64","machineName":"lw0sdlwk00016T","message":"docker run -d --expose=8000 --expose=8585 --name python-grpc_0_58311c64 -e WEBSITE_SITE_NAME=python-grpc -e WEBSITE_AUTH_ENABLED=False -e WEBSITE_ROLE_INSTANCE_ID=0 -e WEBSITE_HOSTNAME=python-grpc.azurewebsites.net -e WEBSITE_INSTANCE_ID=761a092c6cbeec305dbcc6c6e744b006c4d173d9d935c8e17cb6b4c751c4957e -e WEBSITE_USE_DIAGNOSTIC_SERVER=True appsvc/python:3.8_20220315.5 python greeter_server.py \n","id":"085e8912-fa47-4071-9591-03df46c5bf56","instance":"761a092c6cbeec305dbcc6c6e744b006c4d173d9d935c8e17cb6b4c751c4957e"}}
-```
+This setting will communicate to your web app which port is specified to listen over HTTP/2 only.
 
-```
-{"timestamp":"2022-07-11T04:54:20.849Z","level":"ERROR","containerName":"python-grpc_0_58311c64","machineName":"lw0sdlwk00016T","message":"Container python-grpc_0_58311c64 for site python-grpc has exited, failing site start","id":"3a7219d1-8503-49a1-ac58-504bbbf4f1e2","instance":"761a092c6cbeec305dbcc6c6e744b006c4d173d9d935c8e17cb6b4c751c4957e"}
-```
+#### 5. Add WEBSITES_PORT application setting
+We'll need to set the `WEBSITES_PORT` application setting to tell App Service which port HTTP 1.1 is running on. This is especially important for an app running both HTTP 1.1 and HTTP 2 servers.
+1. Navigate to the **Configuration** under **Settings** on the left pane of your web app.
+2. Under **Application Settings**, click on **New application setting**
+3. Add the following app setting to your application
+	1. **Name =** WEBSITES_PORT
+	2. **Value =** 8000
 
-```
-{"timestamp":"2022-07-11T04:54:20.942Z","level":"ERROR","containerName":"python-grpc_0_58311c64","machineName":"lw0sdlwk00016T","message":"Container python-grpc_0_58311c64 didn't respond to HTTP pings on port: 8000, failing site start. See container logs for debugging.","id":"7e7fa632-5f70-4aba-8c13-69e3196330a3","instance":"761a092c6cbeec305dbcc6c6e744b006c4d173d9d935c8e17cb6b4c751c4957e"}
-```
+#### 6. Add SCM_DO_BUILD_DURING_DEPLOYMENT application setting
+To ensure our application runs a `pip install` to resolve all our dependencies named in `requirements.txt`, we'll need to set the following application setting.
+1. Navigate to the **Configuration** under **Settings** on the left pane of your web app.  
+2. Under **Application Settings**, click on **New application setting**
+3. Add the following app setting to your application
+	1. **Name =** SCM_DO_BUILD_DURING_DEPLOYMENT 
+	2. **Value =** true
 
-4. When trying to call make a call from the client
+#### 7. Add a custom startup command
+To ensure your application starts up properly, we'll need to set a custom startup command to kick off our grpc and flask server.
+1. Navigate to the **Configuration** under **Settings** on the left pane of your web app.
+2. Under **General Settings**, add the following **Startup Command** `python app.py`
 
-```
-Traceback (most recent call last):
-  File "greeter_client.py", line 36, in <module>
-    run()
-  File "greeter_client.py", line 28, in run
-    response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-  File "/mnt/c/Users/dbrittain/python-grpc-sample/venv/lib/python3.8/site-packages/grpc/_channel.py", line 946, in __call__
-    return _end_unary_response_blocking(state, call, False, None)
-  File "/mnt/c/Users/dbrittain/python-grpc-sample/venv/lib/python3.8/site-packages/grpc/_channel.py", line 849, in _end_unary_response_blocking
-    raise _InactiveRpcError(state)
-grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
-        status = StatusCode.UNAVAILABLE
-        details = "failed to connect to all addresses"
-        debug_error_string = "{"created":"@1657514369.130117392","description":"Failed to pick subchannel","file":"src/core/ext/filters/client_channel/client_channel.cc","file_line":3128,"referenced_errors":[{"created":"@1657514369.130116240","description":"failed to connect to all addresses","file":"src/core/lib/transport/error_utils.cc","file_line":163,"grpc_status":14}]}"
-```
+#### 8. Save your app configuration
+Click the `Save` button at the top of the Configuration page. This will restart your application and apply all updated application settings.
 
-5. Kudu also responds with an HTTP 502 response "This page isn't working right now"
+#### 9. Deploy the application 
+Run the following command to deploy your grpc app to App Service.
+`az webapp up --name <app-name>`
+
+#### 10. Test the application
+Once deployed, replace the listening port in the local client application with the azurewebsites.net url of your app to test the deployed grpc server. This is found on line 31 of `greeter_client.py`.
+
+### Common Issues/Bugs
+1. Forgetting to set or incorrectly setting any of the above application settings will result in a malfunctioning app
+2. Remember to always start your grpc server before your flask server. In `app.py` running `app.run()` before `grpc_server = serve()` will prevent the grpc server from ever starting.

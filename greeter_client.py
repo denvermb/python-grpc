@@ -23,12 +23,18 @@ import helloworld_pb2_grpc
 
 
 def run():
-    with grpc.insecure_channel('localhost:8585') as channel:
+    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
+    # used in circumstances in which the with statement does not fit the needs
+    # of the code.
+    creds = grpc.ssl_channel_credentials()
+    # replace localhost:8282 with [APP_NAME].azurewebsites.net
+    with grpc.secure_channel('localhost:8282', creds) as channel:
+        print("created channel")
         stub = helloworld_pb2_grpc.GreeterStub(channel)
+        print("created stub")
         response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-        print("Greeter client received: " + response.message)
-        response = stub.SayHelloAgain(helloworld_pb2.HelloRequest(name='you'))
-        print("Greeter client received: " + response.message)
+        print("response returned")
+    print("Greeter client received: " + response.message)
 
 
 if __name__ == '__main__':
